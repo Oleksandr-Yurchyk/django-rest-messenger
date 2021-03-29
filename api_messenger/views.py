@@ -21,7 +21,7 @@ class MessageList(GenericAPIView):
 
     def get(self, request, pk):
         messages = Message.objects.all()
-        paginator = Paginator(messages, 10)
+        paginator = Paginator(messages.order_by('created_at'), 10)
         try:
             messages = paginator.page(pk)
         except EmptyPage:
