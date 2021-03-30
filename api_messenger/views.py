@@ -9,6 +9,9 @@ from api_messenger.serializers import MessageSerializer
 
 
 class MessageDetail(GenericAPIView):
+    serializer_class = MessageSerializer
+    queryset = Message.objects.all()
+
     def get(self, request, pk):
         message = Message.objects.get(pk=pk)
         serializer = MessageSerializer(message, context={'request': request})
