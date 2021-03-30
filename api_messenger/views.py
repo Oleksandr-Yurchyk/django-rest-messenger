@@ -13,7 +13,10 @@ class MessageDetail(GenericAPIView):
     queryset = Message.objects.all()
 
     def get(self, request, pk):
-        message = Message.objects.get(pk=pk)
+        try:
+            message = Message.objects.get(pk=pk)
+        except Message.DoesNotExist:
+            return Response(status=status.HTTP_400_BAD_REQUEST, data='There is no message by given id')
         serializer = MessageSerializer(message, context={'request': request})
         return Response(serializer.data)
 
