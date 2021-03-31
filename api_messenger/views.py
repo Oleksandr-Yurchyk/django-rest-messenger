@@ -1,55 +1,60 @@
 from django.core.paginator import Paginator, EmptyPage
-from rest_framework import status
+from django.http import JsonResponse
 from rest_framework.generics import GenericAPIView
 from rest_framework.response import Response
 
 from api_messenger.models import Message
-from api_messenger.regex_validators import is_email_valid, is_message_valid
 from api_messenger.serializers import MessageSerializer
 
 
 class MessageDetail(GenericAPIView):
+    """Class for view a specific message"""
     serializer_class = MessageSerializer
     queryset = Message.objects.all()
 
     def get(self, request, pk):
         try:
-            message = Message.objects.get(pk=pk)
+            message = self.queryset.get(pk=pk)
         except Message.DoesNotExist:
-            return Response(status=status.HTTP_400_BAD_REQUEST, data='There is no message by given id')
+            # Changed Response to JsonResponse
+            return JsonResponse(
+                status=400,
+                data={"error_message": 'There is no message by given id'}
+            )
+
         serializer = MessageSerializer(message, context={'request': request})
         return Response(serializer.data)
 
 
 class MessageList(GenericAPIView):
+    """Class for view a list with messages with pagination by 10"""
+
     serializer_class = MessageSerializer
     queryset = Message.objects.all()
 
     def get(self, request, pk):
-        messages = Message.objects.all()
+        messages = self.queryset
         paginator = Paginator(messages.order_by('created_at'), 10)
         try:
             messages = paginator.page(pk)
         except EmptyPage:
-            # If page is out of range, deliver first page of results.
-            messages = paginator.page(1)
+            # Changed the display of first page to the last
+            messages = paginator.page(paginator.num_pages)
 
         serializer = MessageSerializer(messages, context={'request': request}, many=True)
         return Response(serializer.data)
 
-    def post(self, request, pk):
-        email = request.data.get('author_email')
-        text = request.data.get('text')
 
-        if not is_email_valid(email):
-            return Response(status=status.HTTP_400_BAD_REQUEST, data='Your email is not valid')
+class CreateMessage(GenericAPIView):
+    """Class for create a message"""
 
-        if not is_message_valid(text):
-            return Response(status=status.HTTP_400_BAD_REQUEST, data='Your message text is not valid')
+    serializer_class = MessageSerializer
 
+    # No more id is needed to create a message
+    def post(self, request):
         serializer = MessageSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
-            return Response(status=status.HTTP_201_CREATED)
+            return Response(status=201)
 
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response(serializer.errors, status=400)

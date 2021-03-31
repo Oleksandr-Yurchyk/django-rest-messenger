@@ -19,6 +19,8 @@ from drf_yasg import openapi
 from drf_yasg.views import get_schema_view
 from rest_framework import permissions
 
+from api_messenger.exception_handlers import error_404, error_500
+
 schema_view = get_schema_view(
     openapi.Info(
         title="Messenger",
@@ -36,3 +38,7 @@ urlpatterns = [
     path('api/messages/', include('api_messenger.urls')),
     path('', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
 ]
+
+# Added global exception handlers
+handler404 = error_404
+handler500 = error_500
